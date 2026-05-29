@@ -134,10 +134,16 @@
   .form-group textarea { min-height: 180px; resize: vertical; line-height: 1.6; }
   .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .form-group input::placeholder, .form-group textarea::placeholder { color: #b5bdc9; }
-  /* dropdown affordance for combo inputs */
-  .form-group .combo { position: relative; }
-  .form-group .combo::after { content: '▾'; position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: 11px; pointer-events: none; }
-  .form-group .combo input { padding-right: 28px; }
+  /* combobox */
+  .combo { position: relative; }
+  .combo input { padding-right: 36px; }
+  .combo-btn { position: absolute; right: 4px; top: 4px; bottom: 4px; width: 28px; border: none; background: transparent; color: var(--faint); cursor: pointer; font-size: 11px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all .12s; }
+  .combo-btn:hover { background: var(--surface-3); color: var(--text-2); }
+  .combo-menu { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); max-height: 220px; overflow-y: auto; z-index: 30; padding: 4px; display: none; }
+  .combo-menu.open { display: block; }
+  .combo-item { padding: 8px 10px; border-radius: 6px; font-family: var(--mono); font-size: 12px; color: var(--text); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .combo-item:hover { background: var(--accent-soft); color: var(--accent-dim); }
+  .combo-empty { padding: 8px 10px; font-size: 12px; color: var(--faint); }
   .form-section-label { grid-column: 1 / -1; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; padding-top: 14px; border-top: 1px dashed var(--border); }
   .form-section-label:first-child { border-top: none; padding-top: 0; margin-top: 0; }
 
@@ -250,7 +256,11 @@
             </div>
             <div class="form-group">
               <label>分组 <span class="key-hint">GROUP</span></label>
-              <div class="combo"><input type="text" id="importGroup" list="dl_group" placeholder="例如: 国内中转 / 官方"></div>
+              <div class="combo">
+                <input type="text" id="importGroup" autocomplete="off" placeholder="例如: 国内中转 / 官方">
+                <button type="button" class="combo-btn" onclick="toggleCombo(event,'importGroup','__group__')">▾</button>
+                <div class="combo-menu" id="m_importGroup"></div>
+              </div>
             </div>
             <div class="form-group full">
               <label>配置文本 <span class="key-hint">JSON / env 片段</span></label>
@@ -280,7 +290,11 @@
               </div>
               <div class="form-group">
                 <label>分组 <span class="key-hint">GROUP</span></label>
-                <div class="combo"><input type="text" id="profileGroup" list="dl_group" placeholder="选择已有或输入新分组"></div>
+                <div class="combo">
+                  <input type="text" id="profileGroup" autocomplete="off" placeholder="选择已有或输入新分组">
+                  <button type="button" class="combo-btn" onclick="toggleCombo(event,'profileGroup','__group__')">▾</button>
+                  <div class="combo-menu" id="m_profileGroup"></div>
+                </div>
               </div>
               <div class="form-section-label">环境变量</div>
               <!-- env fields injected here -->
@@ -313,9 +327,6 @@
   <div class="live-body" id="currentCard"></div>
 </aside>
 
-<!-- shared datalists -->
-<datalist id="dl_group"></datalist>
-<div id="dataLists"></div>
 
 <div class="toast" id="toast"></div>
 
@@ -391,23 +402,41 @@ function maskToken(v) {
   return v.slice(0, 8) + ' •••••••• ' + v.slice(-4);
 }
 
-/* ---------- datalists & edit fields ---------- */
-function refreshDataLists() {
-  document.getElementById('dl_group').innerHTML =
-    distinctGroups().map(v => `<option value="${escAttr(v)}">`).join('');
-  document.getElementById('dataLists').innerHTML = ENV_KEYS
-    .filter(k => !NO_DROPDOWN.has(k))
-    .map(k => `<datalist id="dl_${k}">${distinctValues(k).map(v => `<option value="${escAttr(v)}">`).join('')}</datalist>`)
-    .join('');
-}
+/* ---------- combobox ---------- */
+function comboValues(key) { return key === '__group__' ? distinctGroups() : distinctValues(key); }
 
+function toggleCombo(event, inputId, key) {
+  event.stopPropagation();
+  const menu = document.getElementById('m_' + inputId);
+  const wasOpen = menu.classList.contains('open');
+  closeAllCombos();
+  if (wasOpen) return;
+  const vals = comboValues(key);
+  menu.innerHTML = vals.length
+    ? vals.map(v => `<div class="combo-item" onclick="pickCombo('${inputId}', this)">${esc(v)}</div>`).join('')
+    : '<div class="combo-empty">暂无可选值，直接输入即可</div>';
+  menu.classList.add('open');
+}
+function pickCombo(inputId, el) {
+  document.getElementById(inputId).value = el.textContent;
+  closeAllCombos();
+}
+function closeAllCombos() {
+  document.querySelectorAll('.combo-menu.open').forEach(m => m.classList.remove('open'));
+}
+document.addEventListener('click', closeAllCombos);
+
+/* ---------- edit fields ---------- */
 function renderEditFields(env) {
-  refreshDataLists();
   document.getElementById('envFields').innerHTML = ENV_KEYS.map(k => {
     const dropdown = !NO_DROPDOWN.has(k);
     const input = dropdown
-      ? `<div class="combo"><input type="text" id="f_${k}" list="dl_${k}" placeholder="选择已有或输入新值"></div>`
-      : `<input type="text" id="f_${k}" placeholder="sk-... (粘贴你的密钥)">`;
+      ? `<div class="combo">
+           <input type="text" id="f_${k}" autocomplete="off" placeholder="选择已有或输入新值">
+           <button type="button" class="combo-btn" onclick="toggleCombo(event,'f_${k}','${k}')">▾</button>
+           <div class="combo-menu" id="m_f_${k}"></div>
+         </div>`
+      : `<input type="text" id="f_${k}" autocomplete="off" placeholder="sk-... (粘贴你的密钥)">`;
     return `
       <div class="form-group${dropdown ? '' : ' full'}">
         <label>${esc(LABELS[k] || k)} <span class="key-hint">${k}</span></label>
@@ -542,7 +571,7 @@ async function reloadData() {
     api('/api/config'), api('/api/current'), api('/api/profiles'),
   ]);
   document.getElementById('homeDir').value = appConfig.home_dir || '';
-  renderCurrent(); renderProfiles(); renderAllProfiles(); refreshDataLists();
+  renderCurrent(); renderProfiles(); renderAllProfiles();
 }
 
 async function saveHomeDir() {
@@ -590,7 +619,6 @@ function showImportView() {
   document.getElementById('pageTitle').textContent = '粘贴导入';
   document.getElementById('pageBadge').className = 'badge badge-editing';
   document.getElementById('pageBadge').textContent = '导入';
-  refreshDataLists();
   document.getElementById('importName').value = '';
   document.getElementById('importGroup').value = '默认';
   document.getElementById('importText').value = '';
