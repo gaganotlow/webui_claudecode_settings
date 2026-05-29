@@ -5,220 +5,338 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Claude Code Settings</title>
 <style>
+  :root {
+    --bg: #f5f7fa;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --surface-3: #f1f4f8;
+    --border: #e6e9ef;
+    --border-strong: #d3d9e2;
+    --text: #1f2733;
+    --text-2: #475569;
+    --muted: #6b7585;
+    --faint: #9aa3b2;
+    --accent: #2f6bff;
+    --accent-soft: #eaf0ff;
+    --accent-dim: #1d4ed8;
+    --green: #16a34a;
+    --green-soft: #e7f6ec;
+    --purple: #7c3aed;
+    --red: #dc2626;
+    --red-soft: #fdeaea;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.06);
+    --shadow: 0 4px 16px rgba(16,24,40,.07), 0 1px 3px rgba(16,24,40,.05);
+    --shadow-lg: 0 12px 32px rgba(16,24,40,.12);
+    --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; display: flex; }
-
-  /* Sidebar */
-  .sidebar { width: 280px; background: #161616; border-right: 1px solid #2a2a2a; display: flex; flex-direction: column; flex-shrink: 0; min-height: 100vh; }
-  .sidebar-header { padding: 20px; border-bottom: 1px solid #2a2a2a; }
-  .sidebar-header h2 { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-  .home-path { margin-bottom: 12px; padding: 8px; border: 1px solid #2a2a2a; border-radius: 6px; background: #111; }
-  .home-path label { display: block; margin-bottom: 5px; font-size: 11px; color: #777; font-family: monospace; }
-  .home-path input { width: 100%; padding: 7px 8px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; color: #ccc; font-size: 12px; font-family: monospace; outline: none; }
-  .home-path input:focus { border-color: #2563eb; }
-  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.15s; }
-  .btn-primary { background: #2563eb; color: white; width: 100%; }
-  .btn-primary:hover { background: #1d4ed8; }
-  .btn-sm { padding: 5px 10px; font-size: 12px; }
-  .btn-ghost { background: transparent; color: #888; border: 1px solid #333; }
-  .btn-ghost:hover { border-color: #555; color: #ccc; }
-  .btn-danger { background: transparent; color: #ef4444; border: 1px solid #7f1d1d; }
-  .btn-danger:hover { background: #7f1d1d; }
-  .btn-apply { background: #059669; color: white; }
-  .btn-apply:hover { background: #047857; }
-  .btn-save { background: #8b5cf6; color: white; }
-  .btn-save:hover { background: #7c3aed; }
-  .sidebar-import { width: 100%; margin-top: 8px; }
-
-  .profile-list { flex: 1; overflow-y: auto; padding: 8px; }
-  .group-title { padding: 14px 12px 6px; font-size: 11px; color: #777; text-transform: uppercase; letter-spacing: .8px; }
-  .profile-item { padding: 12px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; transition: background 0.15s; position: relative; }
-  .profile-item:hover { background: #1e1e1e; }
-  .profile-item.active { background: #1a1a2e; border: 1px solid #2563eb33; }
-  .profile-item .name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
-  .profile-item .meta { font-size: 11px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 72px; }
-  .profile-item .hint { margin-top: 8px; font-size: 12px; color: #999; }
-  .profile-item .actions { position: absolute; right: 12px; top: 12px; display: none; gap: 4px; }
-  .profile-item:hover .actions { display: flex; }
-
-  /* Main */
-  .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; min-width: 0; }
-  .main-header { padding: 20px 32px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center; }
-  .main-header h1 { font-size: 20px; font-weight: 600; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
-  .badge-active { background: #05966933; color: #34d399; }
-  .badge-editing { background: #8b5cf633; color: #a78bfa; }
-
-  .content { padding: 32px; max-width: 1100px; width: 100%; }
-  .section { margin-bottom: 32px; }
-  .section-title { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
-
-  .form-group { margin-bottom: 16px; }
-  .form-group label { display: block; font-size: 12px; color: #888; margin-bottom: 6px; font-family: monospace; }
-  .form-group input, .form-group textarea { width: 100%; padding: 10px 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #e0e0e0; font-size: 13px; font-family: monospace; outline: none; transition: border-color 0.15s; }
-  .form-group textarea { min-height: 170px; resize: vertical; line-height: 1.5; }
-  .form-group input:focus, .form-group textarea:focus { border-color: #2563eb; }
-  .form-group input::placeholder, .form-group textarea::placeholder { color: #444; }
-
-  .current-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 10px; padding: 20px; }
-  .current-card .row { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e1e1e; }
-  .current-card .row:last-child { border-bottom: none; }
-  .current-card .key { font-family: monospace; font-size: 12px; color: #888; }
-  .current-card .val { font-family: monospace; font-size: 13px; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
-
-  .profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-  .profile-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; }
-  .profile-card.active { border-color: #059669; background: #102018; }
-  .profile-card-header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-  .profile-card-title { min-width: 0; }
-  .profile-card-title h3 { font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .profile-card-title p { margin-top: 4px; font-size: 12px; color: #777; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .profile-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
-  .kv-list { display: grid; gap: 6px; }
-  .kv-row { display: grid; grid-template-columns: 105px minmax(0, 1fr); gap: 8px; font-size: 12px; }
-  .kv-key { color: #777; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .kv-val { color: #ccc; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  .form-actions { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
-
-  @media (max-width: 760px) {
-    body { flex-direction: column; }
-    .sidebar { width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid #2a2a2a; }
-    .profile-list { max-height: 220px; }
-    .main-header { padding: 16px 20px; }
-    .content { padding: 20px; }
-    .current-card .row { grid-template-columns: 1fr; gap: 4px; }
-    .current-card .val { text-align: left; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #d6dbe4; border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #c2c9d4; background-clip: padding-box; border: 2px solid transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh; display: flex; font-size: 14px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
 
-  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 13px; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; z-index: 100; }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast-success { background: #059669; color: white; }
-  .toast-error { background: #ef4444; color: white; }
+  /* ---------- Sidebar ---------- */
+  .sidebar { width: 264px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; position: sticky; top: 0; }
+  .brand { padding: 20px 20px 16px; }
+  .brand .logo { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; letter-spacing: .2px; }
+  .brand .logo .dot { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 800; }
+  .brand .tag { margin-top: 6px; font-size: 11.5px; color: var(--faint); }
 
-  .empty-state { text-align: center; padding: 40px; color: #555; }
-  .empty-state p { margin-top: 8px; font-size: 13px; }
+  .sidebar-section { padding: 6px 14px 0; }
+  .label { font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin: 14px 6px 8px; }
+  .home-path { padding: 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+  .home-path label { display: block; margin-bottom: 6px; font-size: 10px; color: var(--faint); font-family: var(--mono); letter-spacing: .5px; }
+  .home-path input { width: 100%; padding: 8px 9px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; font-family: var(--mono); outline: none; transition: border-color .15s, box-shadow .15s; }
+  .home-path input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
-  .divider { height: 1px; background: #2a2a2a; margin: 24px 0; }
+  .btn { padding: 9px 16px; border: 1px solid transparent; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+  .btn:active { transform: translateY(1px); }
+  .btn-block { width: 100%; }
+  .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 1px 2px rgba(47,107,255,.4); }
+  .btn-primary:hover { background: var(--accent-dim); }
+  .btn-sm { padding: 6px 11px; font-size: 12px; }
+  .btn-ghost { background: var(--surface); color: var(--text-2); border-color: var(--border-strong); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .btn-danger { background: var(--surface); color: var(--red); border-color: #f0c9c9; }
+  .btn-danger:hover { background: var(--red); color: #fff; border-color: var(--red); }
+  .btn-apply { background: var(--green); color: #fff; box-shadow: 0 1px 2px rgba(22,163,74,.4); }
+  .btn-apply:hover { background: #15803d; }
+  .btn-save { background: var(--accent); color: #fff; }
+  .btn-save:hover { background: var(--accent-dim); }
+  .mt8 { margin-top: 8px; }
+
+  .profile-list { flex: 1; overflow-y: auto; padding: 4px 10px 16px; }
+  .group-title { padding: 14px 8px 6px; font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  .profile-item { padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; margin-bottom: 3px; transition: all .15s; position: relative; border: 1px solid transparent; }
+  .profile-item:hover { background: var(--surface-2); }
+  .profile-item.active { background: var(--accent-soft); border-color: #cdddff; }
+  .profile-item.live { background: var(--green-soft); }
+  .profile-item .name { font-size: 13.5px; font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+  .profile-item .meta { font-size: 11px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 16px; font-family: var(--mono); }
+  .profile-item .actions { position: absolute; right: 10px; top: 9px; display: none; gap: 4px; }
+  .profile-item:hover .actions { display: flex; }
+  .profile-item .actions .btn { padding: 4px 8px; font-size: 11px; }
+  .live-pill { font-size: 10px; font-weight: 700; color: var(--green); background: #fff; border: 1px solid #bfe6cb; padding: 1px 7px; border-radius: 20px; letter-spacing: .3px; }
+
+  /* ---------- Main ---------- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .main-header { padding: 18px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 16px; background: rgba(255,255,255,.8); position: sticky; top: 0; z-index: 5; backdrop-filter: blur(10px); }
+  .main-header h1 { font-size: 19px; font-weight: 700; letter-spacing: .2px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge-active { background: var(--green-soft); color: var(--green); }
+  .badge-editing { background: #f3edff; color: var(--purple); }
+
+  .content { padding: 26px 30px 48px; width: 100%; }
+  .section { margin-bottom: 28px; }
+  .section-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .section-title .section-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .category-list { display: grid; gap: 16px; }
+  .category-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); }
+  .category-card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .category-card-header h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .category-card-header .count { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--surface-3); padding: 2px 9px; border-radius: 20px; }
+  .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+
+  .mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 15px; transition: transform .15s, border-color .15s, box-shadow .15s; }
+  .mini-card:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: var(--shadow); }
+  .mini-card.active { border-color: #bfe6cb; box-shadow: 0 0 0 1px #bfe6cb; }
+  .mini-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mini-card .sub { font-size: 11.5px; color: var(--faint); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); }
+  .mini-card .kv-list { margin-bottom: 14px; }
+  .mini-card .profile-card-actions { justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
+  .mini-card .profile-card-actions .btn { padding: 5px 10px; font-size: 11px; }
+
+  .split-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 18px; align-items: start; }
+  .helper-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; position: sticky; top: 86px; box-shadow: var(--shadow-sm); }
+  .helper-panel h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .helper-panel p { font-size: 12px; line-height: 1.65; color: var(--muted); margin-bottom: 14px; }
+  .helper-list { display: grid; gap: 10px; }
+  .helper-list .mini-card { background: var(--surface-2); }
+
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); }
+  .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-group { margin-bottom: 0; }
+  .form-group label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-2); margin-bottom: 7px; }
+  .form-group label .key-hint { font-size: 10px; font-weight: 500; color: var(--faint); font-family: var(--mono); }
+  .form-group input, .form-group textarea {
+    width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    color: var(--text); font-size: 13px; font-family: var(--mono); outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .form-group textarea { min-height: 180px; resize: vertical; line-height: 1.6; }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .form-group input::placeholder, .form-group textarea::placeholder { color: #b5bdc9; }
+  /* dropdown affordance for combo inputs */
+  .form-group .combo { position: relative; }
+  .form-group .combo::after { content: '▾'; position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: 11px; pointer-events: none; }
+  .form-group .combo input { padding-right: 28px; }
+  .form-section-label { grid-column: 1 / -1; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  .form-section-label:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  .profile-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .kv-list { display: grid; gap: 7px; }
+  .kv-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; font-size: 11.5px; align-items: baseline; }
+  .kv-key { color: var(--faint); font-family: var(--mono); font-weight: 600; }
+  .kv-val { color: var(--text-2); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kv-val.unset { color: #c2c9d4; font-style: italic; }
+
+  .form-actions { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+
+  /* ---------- Right live panel ---------- */
+  .live-panel { width: 340px; flex-shrink: 0; background: var(--surface); border-left: 1px solid var(--border); height: 100vh; position: sticky; top: 0; overflow-y: auto; display: flex; flex-direction: column; }
+  .live-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+  .live-head .title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
+  .live-head .title .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(22,163,74,.5); animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.45); } 70% { box-shadow: 0 0 0 7px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+  .live-head .sub { margin-top: 5px; font-size: 11.5px; color: var(--faint); }
+  .live-active { margin: 14px 20px 0; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--green-soft); border: 1px solid #cdeed7; }
+  .live-active .l { font-size: 10px; color: var(--green); text-transform: uppercase; letter-spacing: .8px; font-weight: 700; }
+  .live-active .v { margin-top: 3px; font-size: 14px; font-weight: 700; color: #15803d; }
+  .live-active.none { background: var(--surface-2); border-color: var(--border); }
+  .live-active.none .l { color: var(--faint); }
+  .live-active.none .v { color: var(--muted); font-weight: 600; font-size: 13px; }
+
+  .live-body { padding: 16px 20px 28px; }
+  .live-group { margin-bottom: 20px; }
+  .live-group:last-child { margin-bottom: 0; }
+  .live-group > .gtitle { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; }
+  .live-row { padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .live-row:last-child { border-bottom: none; }
+  .live-row .k { font-family: var(--mono); font-size: 10.5px; color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .live-row .k .reveal { cursor: pointer; color: var(--accent); font-size: 11px; user-select: none; font-family: -apple-system, sans-serif; font-weight: 600; }
+  .live-row .v { margin-top: 5px; font-family: var(--mono); font-size: 12px; color: var(--text); word-break: break-all; line-height: 1.5; }
+  .live-row .v.unset { color: #c2c9d4; font-style: italic; }
+  .live-row .v.path { color: var(--accent-dim); }
+
+  /* ---------- Misc ---------- */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px); padding: 12px 22px; border-radius: 10px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 100; box-shadow: var(--shadow-lg); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast-success { background: #111827; color: #fff; }
+  .toast-error { background: var(--red); color: #fff; }
+
+  .empty-state { text-align: center; padding: 36px 16px; color: var(--faint); }
+  .empty-state p { margin-top: 6px; font-size: 13px; }
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  @media (max-width: 1160px) { .live-panel { display: none; } }
+  @media (max-width: 880px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+    .profile-list { max-height: 240px; }
+    .main-header { padding: 14px 18px; }
+    .content { padding: 18px; }
+    .split-form, .form-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
 <div class="sidebar">
-  <div class="sidebar-header">
-    <h2>Config Home</h2>
+  <div class="brand">
+    <div class="logo"><span class="dot">C</span> Claude Code</div>
+    <div class="tag">Settings &amp; Profiles Manager</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="label">Config Home</div>
     <div class="home-path">
       <label>HOME_DIR</label>
       <input type="text" id="homeDir" placeholder="~/.claude">
     </div>
-    <button class="btn btn-ghost sidebar-import" onclick="saveHomeDir()">切换主目录</button>
-    <div class="divider"></div>
-    <h2>Profiles</h2>
-    <button class="btn btn-primary" onclick="newProfile()">+ 新建配置</button>
-    <button class="btn btn-ghost sidebar-import" onclick="showImportView()">粘贴导入</button>
+    <button class="btn btn-ghost btn-block mt8" onclick="saveHomeDir()">切换主目录</button>
+    <div class="label">Profiles</div>
+    <button class="btn btn-primary btn-block" onclick="newProfile()">+ 新建配置</button>
+    <button class="btn btn-ghost btn-block mt8" onclick="showImportView()">粘贴导入</button>
   </div>
   <div class="profile-list" id="profileList"></div>
 </div>
 
 <div class="main">
   <div class="main-header">
-    <h1 id="pageTitle">当前配置</h1>
-    <span id="pageBadge" class="badge badge-active">当前生效</span>
+    <h1 id="pageTitle">全部配置</h1>
+    <span id="pageBadge" class="badge badge-active">管理与切换</span>
   </div>
   <div class="content">
-    <!-- Current Config View -->
+    <!-- All profiles -->
     <div id="currentView">
       <div class="section">
-        <div class="section-title">全部配置</div>
-        <div class="profile-grid" id="allProfiles"></div>
-      </div>
-      <div class="section">
-        <div class="section-title">当前 settings.json 生效值</div>
-        <div class="current-card" id="currentCard"></div>
+        <div class="section-title">
+          <span>全部配置</span>
+          <div class="section-actions">
+            <button class="btn btn-sm btn-primary" onclick="newProfile()">+ 新建配置</button>
+            <button class="btn btn-sm btn-ghost" onclick="showImportView()">粘贴导入</button>
+          </div>
+        </div>
+        <div class="category-list" id="allProfiles"></div>
       </div>
     </div>
 
+    <!-- Import -->
     <div id="importView" style="display:none">
       <div class="section">
         <div class="section-title">粘贴 settings env 片段</div>
-        <div class="form-group">
-          <label>ALIAS</label>
-          <input type="text" id="importName" placeholder="例如: UoCode / 备用中转">
-        </div>
-        <div class="form-group">
-          <label>GROUP</label>
-          <input type="text" id="importGroup" placeholder="例如: 国内中转 / 官方 / 备用">
-        </div>
-        <div class="form-group">
-          <label>CONFIG_TEXT</label>
-          <textarea id="importText" placeholder='"ANTHROPIC_AUTH_TOKEN": "sk-...",&#10;"ANTHROPIC_BASE_URL": "https://...",&#10;"ANTHROPIC_MODEL": "gpt-5.5"'></textarea>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-save" onclick="importProfile(false)">导入为配置</button>
-          <button class="btn btn-apply" onclick="importProfile(true)">导入并应用</button>
-          <button class="btn btn-ghost" onclick="cancelEdit()">取消</button>
+        <div class="form-card">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>配置名称 <span class="key-hint">ALIAS</span></label>
+              <input type="text" id="importName" placeholder="例如: UoCode / 备用中转">
+            </div>
+            <div class="form-group">
+              <label>分组 <span class="key-hint">GROUP</span></label>
+              <div class="combo"><input type="text" id="importGroup" list="dl_group" placeholder="例如: 国内中转 / 官方"></div>
+            </div>
+            <div class="form-group full">
+              <label>配置文本 <span class="key-hint">JSON / env 片段</span></label>
+              <textarea id="importText" placeholder='"ANTHROPIC_AUTH_TOKEN": "sk-...",&#10;"ANTHROPIC_BASE_URL": "https://...",&#10;"ANTHROPIC_MODEL": "claude-..."'></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-save" onclick="importProfile(false)">导入为配置</button>
+            <button class="btn btn-apply" onclick="importProfile(true)">导入并应用</button>
+            <button class="btn btn-ghost" onclick="cancelEdit()">取消</button>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Edit / New -->
     <div id="editView" style="display:none">
       <div class="section">
         <div class="section-title" id="editTitle">编辑配置</div>
-        <div class="form-group">
-          <label>ALIAS</label>
-          <input type="text" id="profileName" placeholder="例如: UoCode / 官方API / 备用节点">
-        </div>
-        <div class="form-group">
-          <label>GROUP</label>
-          <input type="text" id="profileGroup" placeholder="例如: 国内中转 / 官方 / 备用">
-        </div>
-        <div class="divider"></div>
-        <div class="form-group">
-          <label>ANTHROPIC_AUTH_TOKEN</label>
-          <input type="text" id="f_ANTHROPIC_AUTH_TOKEN" placeholder="API Key">
-        </div>
-        <div class="form-group">
-          <label>ANTHROPIC_BASE_URL</label>
-          <input type="text" id="f_ANTHROPIC_BASE_URL" placeholder="https://api.anthropic.com">
-        </div>
-        <div class="form-group">
-          <label>ANTHROPIC_MODEL</label>
-          <input type="text" id="f_ANTHROPIC_MODEL" placeholder="claude-sonnet-4-20250514">
-        </div>
-        <div class="form-group">
-          <label>ANTHROPIC_DEFAULT_HAIKU_MODEL</label>
-          <input type="text" id="f_ANTHROPIC_DEFAULT_HAIKU_MODEL" placeholder="claude-haiku-4-5-20251001">
-        </div>
-        <div class="form-group">
-          <label>ANTHROPIC_DEFAULT_OPUS_MODEL</label>
-          <input type="text" id="f_ANTHROPIC_DEFAULT_OPUS_MODEL" placeholder="claude-opus-4-7">
-        </div>
-        <div class="form-group">
-          <label>ANTHROPIC_DEFAULT_SONNET_MODEL</label>
-          <input type="text" id="f_ANTHROPIC_DEFAULT_SONNET_MODEL" placeholder="claude-sonnet-4-6">
-        </div>
-        <div class="form-group">
-          <label>ANTHROPIC_REASONING_MODEL</label>
-          <input type="text" id="f_ANTHROPIC_REASONING_MODEL" placeholder="claude-sonnet-4-6">
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-save" onclick="saveProfile()">保存配置</button>
-          <button class="btn btn-apply" onclick="applyEditing()">保存并应用</button>
-          <button class="btn btn-ghost" onclick="cancelEdit()">取消</button>
+        <div class="split-form">
+          <div class="form-card">
+            <div class="form-grid" id="formGrid">
+              <div class="form-section-label">基本信息</div>
+              <div class="form-group">
+                <label>配置名称 <span class="key-hint">ALIAS</span></label>
+                <input type="text" id="profileName" placeholder="例如: UoCode / 官方API">
+              </div>
+              <div class="form-group">
+                <label>分组 <span class="key-hint">GROUP</span></label>
+                <div class="combo"><input type="text" id="profileGroup" list="dl_group" placeholder="选择已有或输入新分组"></div>
+              </div>
+              <div class="form-section-label">环境变量</div>
+              <!-- env fields injected here -->
+              <div id="envFields" style="display:contents"></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-save" onclick="saveProfile()">保存配置</button>
+              <button class="btn btn-apply" onclick="applyEditing()">保存并应用</button>
+              <button class="btn btn-ghost" onclick="cancelEdit()">取消</button>
+            </div>
+          </div>
+          <div class="helper-panel">
+            <h3>从已有配置复制</h3>
+            <p>选一个现有配置作为模板填入表单，再微调即可。各字段也支持直接从下拉框选择已有的值。</p>
+            <div class="helper-list" id="cloneSuggestions"></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Right: live settings.json values -->
+<aside class="live-panel">
+  <div class="live-head">
+    <div class="title"><span class="pulse"></span> 当前生效值</div>
+    <div class="sub">实时读取 settings.json</div>
+  </div>
+  <div class="live-active" id="liveActive"></div>
+  <div class="live-body" id="currentCard"></div>
+</aside>
+
+<!-- shared datalists -->
+<datalist id="dl_group"></datalist>
+<div id="dataLists"></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const ENV_KEYS = {{ env_keys | tojson }};
+const LABELS = {
+  ANTHROPIC_AUTH_TOKEN: 'API Key',
+  ANTHROPIC_BASE_URL: 'Base URL',
+  ANTHROPIC_MODEL: '默认模型',
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'Opus 模型',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'Sonnet 模型',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'Haiku 模型',
+  ANTHROPIC_REASONING_MODEL: '推理模型',
+};
+const NO_DROPDOWN = new Set(['ANTHROPIC_AUTH_TOKEN']);  // key 不提供下拉
+
 let profiles = [];
 let currentEnv = {};
 let appConfig = {};
 let editingId = null;
+let tokenRevealed = false;
 
 async function api(url, opts = {}) {
   const res = await fetch(url, {
@@ -236,51 +354,107 @@ function toast(msg, type = 'success') {
   setTimeout(() => el.className = 'toast', 2500);
 }
 
-function getFormEnv() {
-  const env = {};
-  ENV_KEYS.forEach(k => {
-    env[k] = document.getElementById('f_' + k).value.trim();
-  });
-  return env;
-}
-
-function setFormEnv(env) {
-  ENV_KEYS.forEach(k => {
-    document.getElementById('f_' + k).value = env[k] || '';
-  });
-}
+function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
 
 function isActiveProfile(profile) {
   return ENV_KEYS.every(k => (profile.env[k] || '') === (currentEnv[k] || ''));
+}
+function hasAnyEnv() { return ENV_KEYS.some(k => (currentEnv[k] || '').length > 0); }
+function activeProfileName() {
+  if (!hasAnyEnv()) return null;
+  const p = profiles.find(isActiveProfile);
+  return p ? p.name : null;
 }
 
 function groupProfiles() {
   return profiles.reduce((groups, profile) => {
     const group = profile.group || '默认';
-    if (!groups[group]) groups[group] = [];
-    groups[group].push(profile);
+    (groups[group] = groups[group] || []).push(profile);
     return groups;
   }, {});
 }
 
-function renderProfiles() {
-  const list = document.getElementById('profileList');
+function distinctValues(key) {
+  const set = new Set();
+  profiles.forEach(p => { const v = (p.env[key] || '').trim(); if (v) set.add(v); });
+  const cur = (currentEnv[key] || '').trim(); if (cur) set.add(cur);
+  return [...set];
+}
+function distinctGroups() {
+  return [...new Set(profiles.map(p => (p.group || '默认').trim()).filter(Boolean))];
+}
+
+function maskToken(v) {
+  if (!v) return '';
+  if (tokenRevealed) return v;
+  if (v.length <= 14) return '••••••••';
+  return v.slice(0, 8) + ' •••••••• ' + v.slice(-4);
+}
+
+/* ---------- datalists & edit fields ---------- */
+function refreshDataLists() {
+  document.getElementById('dl_group').innerHTML =
+    distinctGroups().map(v => `<option value="${escAttr(v)}">`).join('');
+  document.getElementById('dataLists').innerHTML = ENV_KEYS
+    .filter(k => !NO_DROPDOWN.has(k))
+    .map(k => `<datalist id="dl_${k}">${distinctValues(k).map(v => `<option value="${escAttr(v)}">`).join('')}</datalist>`)
+    .join('');
+}
+
+function renderEditFields(env) {
+  refreshDataLists();
+  document.getElementById('envFields').innerHTML = ENV_KEYS.map(k => {
+    const dropdown = !NO_DROPDOWN.has(k);
+    const input = dropdown
+      ? `<div class="combo"><input type="text" id="f_${k}" list="dl_${k}" placeholder="选择已有或输入新值"></div>`
+      : `<input type="text" id="f_${k}" placeholder="sk-... (粘贴你的密钥)">`;
+    return `
+      <div class="form-group${dropdown ? '' : ' full'}">
+        <label>${esc(LABELS[k] || k)} <span class="key-hint">${k}</span></label>
+        ${input}
+      </div>`;
+  }).join('');
+  ENV_KEYS.forEach(k => { document.getElementById('f_' + k).value = env[k] || ''; });
+}
+
+function getFormEnv() {
+  const env = {};
+  ENV_KEYS.forEach(k => { env[k] = document.getElementById('f_' + k).value.trim(); });
+  return env;
+}
+
+/* ---------- renders ---------- */
+function renderCloneSuggestions() {
+  const box = document.getElementById('cloneSuggestions');
+  if (!box) return;
   if (profiles.length === 0) {
-    list.innerHTML = '<div class="empty-state"><p>暂无保存的配置</p></div>';
+    box.innerHTML = '<div class="empty-state"><p>暂无可用模板</p></div>';
     return;
   }
+  box.innerHTML = profiles.slice(0, 6).map(p => `
+    <div class="mini-card">
+      <h4>${esc(p.name)}</h4>
+      <div class="sub">${esc(p.group || '默认')} · ${esc(p.env.ANTHROPIC_BASE_URL || '未设置URL')}</div>
+      <button class="btn btn-sm btn-ghost" onclick="fillFromProfile('${p.id}')">填入此配置</button>
+    </div>
+  `).join('');
+}
+
+function renderProfiles() {
+  const list = document.getElementById('profileList');
+  if (profiles.length === 0) { list.innerHTML = '<div class="empty-state"><p>暂无保存的配置</p></div>'; return; }
   const groups = groupProfiles();
   list.innerHTML = Object.entries(groups).map(([group, items]) => `
     <div class="group-title">${esc(group)}</div>
     ${items.map(p => {
-      const isActive = isActiveProfile(p);
+      const isActive = isActiveProfile(p) && hasAnyEnv();
       return `
-        <div class="profile-item ${editingId === p.id ? 'active' : ''}" onclick="editProfile('${p.id}')">
-          <div class="name">${esc(p.name)} ${isActive ? '<span style="color:#34d399;font-size:11px">&#9679; 生效中</span>' : ''}</div>
+        <div class="profile-item ${editingId === p.id ? 'active' : ''} ${isActive ? 'live' : ''}" onclick="editProfile('${p.id}')">
+          <div class="name">${esc(p.name)} ${isActive ? '<span class="live-pill">生效中</span>' : ''}</div>
           <div class="meta">${esc(p.env.ANTHROPIC_BASE_URL || '未设置URL')}</div>
-          ${isActive ? '<div class="hint">当前 settings.json 正在使用这组配置</div>' : ''}
           <div class="actions">
             <button class="btn btn-sm btn-apply" onclick="event.stopPropagation();applyProfile('${p.id}')">应用</button>
+            <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();cloneProfile('${p.id}')">克隆</button>
             <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProfile('${p.id}')">删除</button>
           </div>
         </div>`;
@@ -294,73 +468,91 @@ function renderAllProfiles() {
     grid.innerHTML = '<div class="empty-state"><p>暂无保存的配置，先新建或粘贴导入。</p></div>';
     return;
   }
-  grid.innerHTML = profiles.map(p => {
-    const isActive = isActiveProfile(p);
-    return `
-      <div class="profile-card ${isActive ? 'active' : ''}">
-        <div class="profile-card-header">
-          <div class="profile-card-title">
-            <h3>${esc(p.name)}</h3>
-            <p>${esc(p.group || '默认')} · ${esc(p.env.ANTHROPIC_BASE_URL || '未设置URL')}</p>
-          </div>
-          <div class="profile-card-actions">
-            <button class="btn btn-sm btn-apply" onclick="applyProfile('${p.id}')">应用</button>
-            <button class="btn btn-sm btn-ghost" onclick="editProfile('${p.id}')">编辑</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteProfile('${p.id}')">删除</button>
-          </div>
-        </div>
-        <div class="kv-list">
-          <div class="kv-row"><span class="kv-key">MODEL</span><span class="kv-val" title="${esc(p.env.ANTHROPIC_MODEL || '')}">${esc(p.env.ANTHROPIC_MODEL || '<未设置>')}</span></div>
-          <div class="kv-row"><span class="kv-key">OPUS</span><span class="kv-val" title="${esc(p.env.ANTHROPIC_DEFAULT_OPUS_MODEL || '')}">${esc(p.env.ANTHROPIC_DEFAULT_OPUS_MODEL || '<未设置>')}</span></div>
-          <div class="kv-row"><span class="kv-key">SONNET</span><span class="kv-val" title="${esc(p.env.ANTHROPIC_DEFAULT_SONNET_MODEL || '')}">${esc(p.env.ANTHROPIC_DEFAULT_SONNET_MODEL || '<未设置>')}</span></div>
-          <div class="kv-row"><span class="kv-key">HAIKU</span><span class="kv-val" title="${esc(p.env.ANTHROPIC_DEFAULT_HAIKU_MODEL || '')}">${esc(p.env.ANTHROPIC_DEFAULT_HAIKU_MODEL || '<未设置>')}</span></div>
-        </div>
-      </div>`;
-  }).join('');
+  const groups = groupProfiles();
+  grid.innerHTML = Object.entries(groups).map(([group, items]) => `
+    <div class="category-card">
+      <div class="category-card-header">
+        <h3>${esc(group)} <span class="count">${items.length}</span></h3>
+        <button class="btn btn-sm btn-ghost" onclick="newProfile('${escAttr(group)}')">+ 在此分组新建</button>
+      </div>
+      <div class="category-grid">
+        ${items.map(p => {
+          const isActive = isActiveProfile(p) && hasAnyEnv();
+          return `
+            <div class="mini-card ${isActive ? 'active' : ''}">
+              <h4>${esc(p.name)} ${isActive ? '<span class="live-pill">生效中</span>' : ''}</h4>
+              <div class="sub">${esc(p.env.ANTHROPIC_BASE_URL || '未设置URL')}</div>
+              <div class="kv-list">
+                <div class="kv-row"><span class="kv-key">MODEL</span><span class="kv-val ${p.env.ANTHROPIC_MODEL ? '' : 'unset'}" title="${escAttr(p.env.ANTHROPIC_MODEL || '')}">${esc(p.env.ANTHROPIC_MODEL || '未设置')}</span></div>
+                <div class="kv-row"><span class="kv-key">SONNET</span><span class="kv-val ${p.env.ANTHROPIC_DEFAULT_SONNET_MODEL ? '' : 'unset'}" title="${escAttr(p.env.ANTHROPIC_DEFAULT_SONNET_MODEL || '')}">${esc(p.env.ANTHROPIC_DEFAULT_SONNET_MODEL || '未设置')}</span></div>
+              </div>
+              <div class="profile-card-actions">
+                <button class="btn btn-sm btn-apply" onclick="applyProfile('${p.id}')">应用</button>
+                <button class="btn btn-sm btn-ghost" onclick="editProfile('${p.id}')">编辑</button>
+                <button class="btn btn-sm btn-ghost" onclick="cloneProfile('${p.id}')">克隆</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteProfile('${p.id}')">删除</button>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function liveRow(key, value, opts = {}) {
+  const has = (value || '').length > 0;
+  const cls = ['v'];
+  if (!has) cls.push('unset');
+  if (opts.path) cls.push('path');
+  const reveal = opts.maskable
+    ? `<span class="reveal" onclick="tokenRevealed=!tokenRevealed;renderCurrent()">${tokenRevealed ? '隐藏' : '显示'}</span>` : '';
+  const shown = opts.maskable ? maskToken(value) : (has ? value : '未设置');
+  return `
+    <div class="live-row">
+      <div class="k"><span>${esc(key)}</span>${reveal}</div>
+      <div class="${cls.join(' ')}" title="${escAttr(value || '')}">${esc(shown || '未设置')}</div>
+    </div>`;
 }
 
 function renderCurrent() {
-  const card = document.getElementById('currentCard');
-  card.innerHTML = `
-    <div class="row">
-      <span class="key">HOME_DIR</span>
-      <span class="val" title="${esc(appConfig.home_dir || '')}">${esc(appConfig.home_dir || '<未设置>')}</span>
+  const name = activeProfileName();
+  const banner = document.getElementById('liveActive');
+  if (!hasAnyEnv()) {
+    banner.className = 'live-active none';
+    banner.innerHTML = `<div class="l">Active Profile</div><div class="v">settings.json 暂无 env 配置</div>`;
+  } else {
+    banner.className = 'live-active';
+    banner.innerHTML = `<div class="l">Active Profile</div><div class="v">${name ? esc(name) : '自定义 / 未匹配任何配置'}</div>`;
+  }
+  document.getElementById('currentCard').innerHTML = `
+    <div class="live-group">
+      <div class="gtitle">路径</div>
+      ${liveRow('HOME_DIR', appConfig.home_dir, { path: true })}
+      ${liveRow('SETTINGS_PATH', appConfig.settings_path, { path: true })}
     </div>
-    <div class="row">
-      <span class="key">SETTINGS_PATH</span>
-      <span class="val" title="${esc(appConfig.settings_path || '')}">${esc(appConfig.settings_path || '<未设置>')}</span>
-    </div>
-    ${ENV_KEYS.map(k => `
-      <div class="row">
-        <span class="key">${k}</span>
-        <span class="val" title="${esc(currentEnv[k] || '')}">${esc(currentEnv[k] || '<未设置>')}</span>
-      </div>`).join('')}`;
+    <div class="live-group">
+      <div class="gtitle">环境变量 (env)</div>
+      ${ENV_KEYS.map(k => liveRow(k, currentEnv[k], { maskable: k === 'ANTHROPIC_AUTH_TOKEN' })).join('')}
+    </div>`;
 }
 
+/* ---------- data ---------- */
 async function reloadData() {
   [appConfig, currentEnv, profiles] = await Promise.all([
-    api('/api/config'),
-    api('/api/current'),
-    api('/api/profiles'),
+    api('/api/config'), api('/api/current'), api('/api/profiles'),
   ]);
   document.getElementById('homeDir').value = appConfig.home_dir || '';
-  renderCurrent();
-  renderProfiles();
-  renderAllProfiles();
+  renderCurrent(); renderProfiles(); renderAllProfiles(); refreshDataLists();
 }
 
 async function saveHomeDir() {
   const homeDir = document.getElementById('homeDir').value.trim();
   const res = await api('/api/config', { method: 'POST', body: { home_dir: homeDir } });
-  if (res.error) {
-    toast(res.error, 'error');
-    return;
-  }
-  await reloadData();
-  showCurrent();
-  toast('已切换主目录');
+  if (res.error) { toast(res.error, 'error'); return; }
+  await reloadData(); showCurrent(); toast('已切换主目录');
 }
 
+/* ---------- views ---------- */
 function showCurrent() {
   editingId = null;
   document.getElementById('currentView').style.display = '';
@@ -369,34 +561,23 @@ function showCurrent() {
   document.getElementById('pageTitle').textContent = '全部配置';
   document.getElementById('pageBadge').className = 'badge badge-active';
   document.getElementById('pageBadge').textContent = '管理与切换';
-  renderProfiles();
-  renderAllProfiles();
+  renderProfiles(); renderAllProfiles();
 }
 
 function showEditForm(profile) {
   document.getElementById('currentView').style.display = 'none';
   document.getElementById('importView').style.display = 'none';
   document.getElementById('editView').style.display = '';
-  if (profile) {
-    editingId = profile.id;
-    document.getElementById('pageTitle').textContent = '编辑配置';
-    document.getElementById('pageBadge').className = 'badge badge-editing';
-    document.getElementById('pageBadge').textContent = '编辑中';
-    document.getElementById('editTitle').textContent = '编辑: ' + profile.name;
-    document.getElementById('profileName').value = profile.name;
-    document.getElementById('profileGroup').value = profile.group || '默认';
-    setFormEnv(profile.env);
-  } else {
-    editingId = null;
-    document.getElementById('pageTitle').textContent = '新建配置';
-    document.getElementById('pageBadge').className = 'badge badge-editing';
-    document.getElementById('pageBadge').textContent = '新建';
-    document.getElementById('editTitle').textContent = '新建配置';
-    document.getElementById('profileName').value = '';
-    document.getElementById('profileGroup').value = '默认';
-    setFormEnv({});
-  }
-  renderProfiles();
+  const isEdit = profile && profile.id;
+  editingId = isEdit ? profile.id : null;
+  document.getElementById('pageBadge').className = 'badge badge-editing';
+  document.getElementById('pageTitle').textContent = isEdit ? '编辑配置' : '新建配置';
+  document.getElementById('pageBadge').textContent = isEdit ? '编辑中' : '新建';
+  document.getElementById('editTitle').textContent = isEdit ? '编辑: ' + profile.name : '新建配置';
+  renderEditFields((profile && profile.env) || emptyEnv());
+  document.getElementById('profileName').value = (profile && profile.name) || '';
+  document.getElementById('profileGroup').value = (profile && profile.group) || '默认';
+  renderProfiles(); renderCloneSuggestions();
 }
 
 function cancelEdit() { showCurrent(); }
@@ -409,36 +590,47 @@ function showImportView() {
   document.getElementById('pageTitle').textContent = '粘贴导入';
   document.getElementById('pageBadge').className = 'badge badge-editing';
   document.getElementById('pageBadge').textContent = '导入';
+  refreshDataLists();
   document.getElementById('importName').value = '';
   document.getElementById('importGroup').value = '默认';
   document.getElementById('importText').value = '';
   renderProfiles();
 }
 
-function newProfile() { showEditForm(null); }
+function newProfile(group = '默认') { showEditForm({ id: null, name: '', group, env: emptyEnv() }); }
 
-async function editProfile(id) {
+function editProfile(id) {
   const p = profiles.find(x => x.id === id);
   if (p) showEditForm(p);
 }
+function cloneProfile(id) {
+  const p = profiles.find(x => x.id === id);
+  if (p) showEditForm({ ...p, id: null, name: `${p.name} 副本`, created_at: undefined });
+}
+// 在编辑表单内用某个配置的值填充字段（不改变正在编辑的目标）
+function fillFromProfile(id) {
+  const p = profiles.find(x => x.id === id);
+  if (!p) return;
+  renderEditFields(p.env);
+  if (!document.getElementById('profileGroup').value.trim())
+    document.getElementById('profileGroup').value = p.group || '默认';
+  toast('已填入: ' + p.name);
+}
 
+/* ---------- import parse ---------- */
 function parseConfigText(text) {
   const trimmed = text.trim();
   if (!trimmed) throw new Error('请先粘贴配置内容');
-
   const candidates = [trimmed, `{${trimmed.replace(/,\s*$/, '')}}`];
   for (const candidate of candidates) {
     try {
       const parsed = JSON.parse(candidate);
       const source = parsed.env && typeof parsed.env === 'object' ? parsed.env : parsed;
       const env = {};
-      ENV_KEYS.forEach(k => {
-        if (typeof source[k] === 'string') env[k] = source[k];
-      });
+      ENV_KEYS.forEach(k => { if (typeof source[k] === 'string') env[k] = source[k]; });
       if (Object.keys(env).length > 0) return { ...emptyEnv(), ...env };
     } catch (_) {}
   }
-
   const env = {};
   const re = /["']?(ANTHROPIC_[A-Z_]+)["']?\s*[:=]\s*["']([^"']*)["']/g;
   let match;
@@ -449,19 +641,12 @@ function parseConfigText(text) {
   return { ...emptyEnv(), ...env };
 }
 
-function emptyEnv() {
-  return Object.fromEntries(ENV_KEYS.map(k => [k, '']));
-}
+function emptyEnv() { return Object.fromEntries(ENV_KEYS.map(k => [k, ''])); }
 
 async function importProfile(applyAfterSave) {
   let env;
-  try {
-    env = parseConfigText(document.getElementById('importText').value);
-  } catch (e) {
-    toast(e.message, 'error');
-    return;
-  }
-
+  try { env = parseConfigText(document.getElementById('importText').value); }
+  catch (e) { toast(e.message, 'error'); return; }
   const name = document.getElementById('importName').value.trim() || env.ANTHROPIC_BASE_URL || env.ANTHROPIC_MODEL || '导入配置';
   const group = document.getElementById('importGroup').value.trim() || '默认';
   await api('/api/profiles', { method: 'POST', body: { name, group, env } });
@@ -469,25 +654,18 @@ async function importProfile(applyAfterSave) {
     await api('/api/apply', { method: 'POST', body: env });
     currentEnv = await api('/api/current');
     toast('已导入并应用: ' + name);
-  } else {
-    toast('已导入配置: ' + name);
-  }
+  } else { toast('已导入配置: ' + name); }
   profiles = await api('/api/profiles');
-  renderCurrent();
-  showCurrent();
+  renderCurrent(); showCurrent();
 }
 
+/* ---------- save / apply ---------- */
 async function saveProfile() {
   const name = document.getElementById('profileName').value.trim() || '未命名';
   const group = document.getElementById('profileGroup').value.trim() || '默认';
   const env = getFormEnv();
-  if (editingId) {
-    await api(`/api/profiles/${editingId}`, { method: 'PUT', body: { name, group, env } });
-    toast('配置已更新');
-  } else {
-    await api('/api/profiles', { method: 'POST', body: { name, group, env } });
-    toast('配置已保存');
-  }
+  if (editingId) { await api(`/api/profiles/${editingId}`, { method: 'PUT', body: { name, group, env } }); toast('配置已更新'); }
+  else { await api('/api/profiles', { method: 'POST', body: { name, group, env } }); toast('配置已保存'); }
   profiles = await api('/api/profiles');
   showCurrent();
 }
@@ -496,16 +674,12 @@ async function applyEditing() {
   const name = document.getElementById('profileName').value.trim() || '未命名';
   const group = document.getElementById('profileGroup').value.trim() || '默认';
   const env = getFormEnv();
-  if (editingId) {
-    await api(`/api/profiles/${editingId}`, { method: 'PUT', body: { name, group, env } });
-  } else {
-    await api('/api/profiles', { method: 'POST', body: { name, group, env } });
-  }
+  if (editingId) await api(`/api/profiles/${editingId}`, { method: 'PUT', body: { name, group, env } });
+  else await api('/api/profiles', { method: 'POST', body: { name, group, env } });
   await api('/api/apply', { method: 'POST', body: env });
   profiles = await api('/api/profiles');
   currentEnv = await api('/api/current');
-  renderCurrent();
-  showCurrent();
+  renderCurrent(); showCurrent();
   toast('已保存并应用: ' + name);
 }
 
@@ -513,9 +687,7 @@ async function applyProfile(id) {
   const res = await api(`/api/apply/${id}`, { method: 'POST' });
   if (res.ok) {
     currentEnv = await api('/api/current');
-    renderCurrent();
-    renderProfiles();
-    renderAllProfiles();
+    renderCurrent(); renderProfiles(); renderAllProfiles();
     toast('已切换到: ' + res.applied);
   }
 }
@@ -526,24 +698,17 @@ async function deleteProfile(id) {
   await api(`/api/profiles/${id}`, { method: 'DELETE' });
   profiles = await api('/api/profiles');
   if (editingId === id) showCurrent();
-  else {
-    renderProfiles();
-    renderAllProfiles();
-  }
+  else { renderProfiles(); renderAllProfiles(); }
   toast('已删除');
 }
 
 function esc(s) {
   const d = document.createElement('div');
-  d.textContent = s;
+  d.textContent = s == null ? '' : s;
   return d.innerHTML;
 }
 
-async function init() {
-  await reloadData();
-}
-
-init();
+(async function init() { await reloadData(); })();
 </script>
 </body>
 </html>
