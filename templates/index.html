@@ -220,6 +220,7 @@
     <div class="label">Profiles</div>
     <button class="btn btn-primary btn-block" onclick="newProfile()">+ 新建配置</button>
     <button class="btn btn-ghost btn-block mt8" onclick="showImportView()">粘贴导入</button>
+    <button class="btn btn-ghost btn-block mt8" onclick="exportConfig()">⬇ 导出全部配置</button>
   </div>
   <div class="profile-list" id="profileList"></div>
 </div>
@@ -238,6 +239,7 @@
           <div class="section-actions">
             <button class="btn btn-sm btn-primary" onclick="newProfile()">+ 新建配置</button>
             <button class="btn btn-sm btn-ghost" onclick="showImportView()">粘贴导入</button>
+            <button class="btn btn-sm btn-ghost" onclick="exportConfig()">⬇ 导出全部配置</button>
           </div>
         </div>
         <div class="category-list" id="allProfiles"></div>
@@ -247,9 +249,10 @@
     <!-- Import -->
     <div id="importView" style="display:none">
       <div class="section">
-        <div class="section-title">粘贴 settings env 片段</div>
+        <div class="section-title">导入配置</div>
         <div class="form-card">
           <div class="form-grid">
+            <div class="form-section-label">方式一：粘贴文本导入（单个配置）</div>
             <div class="form-group">
               <label>配置名称 <span class="key-hint">ALIAS</span></label>
               <input type="text" id="importName" placeholder="例如: UoCode / 备用中转">
@@ -266,11 +269,28 @@
               <label>配置文本 <span class="key-hint">JSON / env 片段</span></label>
               <textarea id="importText" placeholder='"ANTHROPIC_AUTH_TOKEN": "sk-...",&#10;"ANTHROPIC_BASE_URL": "https://...",&#10;"ANTHROPIC_MODEL": "claude-..."'></textarea>
             </div>
+            <div class="form-actions">
+              <button class="btn btn-save" onclick="importProfile(false)">导入为配置</button>
+              <button class="btn btn-apply" onclick="importProfile(true)">导入并应用</button>
+            </div>
+            <div class="form-section-label">方式二：上传 JSON 文件导入（批量配置）</div>
+            <div class="form-group full">
+              <label>选择导出的 JSON 文件 <span class="key-hint">.json</span></label>
+              <input type="file" id="importFile" accept=".json" style="padding:8px">
+            </div>
+            <div class="form-group" style="align-self:end">
+              <label>导入模式</label>
+              <select id="importMode" style="width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);color:var(--text);font-size:13px;outline:none">
+                <option value="merge">合并（推荐）— 保留已有，新增不存在的</option>
+                <option value="replace">替换 — 完全覆盖已有配置</option>
+              </select>
+            </div>
+            <div class="form-actions full" style="grid-column:1/-1">
+              <button class="btn btn-apply" onclick="importFileConfig()">⬆ 上传并导入</button>
+            </div>
           </div>
-          <div class="form-actions">
-            <button class="btn btn-save" onclick="importProfile(false)">导入为配置</button>
-            <button class="btn btn-apply" onclick="importProfile(true)">导入并应用</button>
-            <button class="btn btn-ghost" onclick="cancelEdit()">取消</button>
+          <div class="form-actions" style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px">
+            <button class="btn btn-ghost" onclick="cancelEdit()">↩ 返回</button>
           </div>
         </div>
       </div>
@@ -685,6 +705,45 @@ async function importProfile(applyAfterSave) {
   } else { toast('已导入配置: ' + name); }
   profiles = await api('/api/profiles');
   renderCurrent(); showCurrent();
+}
+
+/* ---------- export / import file ---------- */
+async function exportConfig() {
+  try {
+    const res = await fetch('/api/export');
+    if (!res.ok) { const j = await res.json().catch(() => ({})); toast(j.error || '导出失败', 'error'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'claude_code_config_export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('配置已导出');
+  } catch (e) { toast('导出失败: ' + e.message, 'error'); }
+}
+
+async function importFileConfig() {
+  const file = document.getElementById('importFile').files[0];
+  if (!file) { toast('请先选择 JSON 文件', 'error'); return; }
+  const mode = document.getElementById('importMode').value;
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res = await fetch('/api/import?mode=' + mode, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.error) { toast(data.error, 'error'); return; }
+    if (data.profiles_count === 0 && mode === 'merge') {
+      toast('文件中没有新的配置需要导入（全部已存在）');
+    } else {
+      toast('已导入 ' + data.profiles_count + ' 个配置' + (data.settings_updated ? '，并更新了生效环境变量' : ''));
+    }
+    profiles = await api('/api/profiles');
+    currentEnv = await api('/api/current');
+    renderCurrent(); showCurrent();
+  } catch (e) { toast('导入失败: ' + e.message, 'error'); }
 }
 
 /* ---------- save / apply ---------- */

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import json
+import io
 import os
 import uuid
 from datetime import datetime
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 
 app = Flask(__name__)
 
@@ -176,6 +177,87 @@ def api_apply_direct():
     env_vars = {k: data.get(k, "") for k in ENV_KEYS if k in data}
     apply_env(env_vars)
     return jsonify({"ok": True})
+
+
+@app.route("/api/export")
+def api_export():
+    """导出所有配置为一个 JSON 文件，包含 profiles 和当前 settings.json 的 env"""
+    settings = read_json(get_settings_path())
+    export_data = {
+        "version": 1,
+        "exported_at": datetime.now().isoformat(),
+        "profiles": get_profiles(),
+        "settings_env": get_current_env(),
+        "settings": {k: v for k, v in settings.items() if k != "env"},
+    }
+    buf = io.BytesIO()
+    buf.write(json.dumps(export_data, indent=2, ensure_ascii=False).encode("utf-8"))
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="application/json",
+        as_attachment=True,
+        download_name="claude_code_config_export.json",
+    )
+
+
+@app.route("/api/import", methods=["POST"])
+def api_import():
+    """
+    导入配置。
+    支持两种模式：
+    - merge (默认): 合并 profiles（按 name+group 去重），不覆盖 settings
+    - replace: 完全替换 profiles 和 settings env
+    """
+    mode = request.args.get("mode", "merge")
+    file = request.files.get("file")
+    if file:
+        raw = file.read().decode("utf-8")
+    else:
+        data = request.get_json(silent=True) or {}
+        raw = json.dumps(data)
+
+    try:
+        import_data = json.loads(raw)
+    except json.JSONDecodeError:
+        return jsonify({"error": "无效的 JSON 文件"}), 400
+
+    result = {"profiles_count": 0, "settings_updated": False}
+
+    if mode == "replace":
+        # 完全替换
+        imported_profiles = import_data.get("profiles", [])
+        save_profiles(imported_profiles)
+        result["profiles_count"] = len(imported_profiles)
+
+        settings_env = import_data.get("settings_env", {})
+        if settings_env:
+            apply_env(settings_env)
+            result["settings_updated"] = True
+    else:
+        # merge 模式
+        existing = get_profiles()
+        existing_keys = {(p.get("name", ""), p.get("group", "默认")) for p in existing}
+        imported = import_data.get("profiles", [])
+        merged = list(existing)
+        added = 0
+        for p in imported:
+            key = (p.get("name", ""), p.get("group", "默认"))
+            if key not in existing_keys:
+                p["id"] = str(uuid.uuid4())[:8]
+                p.setdefault("created_at", datetime.now().isoformat())
+                merged.append(p)
+                existing_keys.add(key)
+                added += 1
+        save_profiles(merged)
+        result["profiles_count"] = added
+
+    return jsonify(result)
+
+
+@app.route("/api/import", methods=["GET"])
+def api_import_status():
+    return jsonify({"error": "请使用 POST 方法上传文件"}), 405
 
 
 if __name__ == "__main__":
