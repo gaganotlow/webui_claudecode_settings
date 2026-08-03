@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Code Settings</title>
+<title>Claude & Codex Settings</title>
 <style>
   :root {
     --bg: #f5f7fa;
@@ -22,6 +22,8 @@
     --green: #16a34a;
     --green-soft: #e7f6ec;
     --purple: #7c3aed;
+    --orange: #ea580c;
+    --orange-soft: #fff5ed;
     --red: #dc2626;
     --red-soft: #fdeaea;
     --radius: 14px;
@@ -47,6 +49,15 @@
   .brand .logo { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; letter-spacing: .2px; }
   .brand .logo .dot { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 800; }
   .brand .tag { margin-top: 6px; font-size: 11.5px; color: var(--faint); }
+
+  /* provider tabs */
+  .provider-tabs { display: flex; gap: 0; padding: 0 14px; margin-bottom: 6px; }
+  .provider-tab { flex: 1; padding: 8px 0; text-align: center; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 13px; font-weight: 600; border: 1px solid transparent; border-bottom: none; transition: all .15s; color: var(--faint); }
+  .provider-tab.claude { background: transparent; }
+  .provider-tab.codex { background: transparent; }
+  .provider-tab:hover { color: var(--text-2); background: var(--surface-2); }
+  .provider-tab.active.claude { color: var(--accent); background: var(--accent-soft); border-color: #cdddff; }
+  .provider-tab.active.codex { color: var(--orange); background: var(--orange-soft); border-color: #fdd6b5; }
 
   .sidebar-section { padding: 6px 14px 0; }
   .label { font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin: 14px 6px 8px; }
@@ -207,13 +218,18 @@
 
 <div class="sidebar">
   <div class="brand">
-    <div class="logo"><span class="dot">C</span> Claude Code</div>
+    <div class="logo"><span class="dot">C</span> Claude &amp; Codex</div>
     <div class="tag">Settings &amp; Profiles Manager</div>
+  </div>
+  <!-- Provider switcher -->
+  <div class="provider-tabs">
+    <div class="provider-tab claude active" id="tabClaude" onclick="switchProvider('claude')">Claude</div>
+    <div class="provider-tab codex" id="tabCodex" onclick="switchProvider('codex')">Codex</div>
   </div>
   <div class="sidebar-section">
     <div class="label">Config Home</div>
     <div class="home-path">
-      <label>HOME_DIR</label>
+      <label id="homeDirLabel">CLAUDE_HOME_DIR</label>
       <input type="text" id="homeDir" placeholder="~/.claude">
     </div>
     <button class="btn btn-ghost btn-block mt8" onclick="saveHomeDir()">切换主目录</button>
@@ -267,7 +283,7 @@
             </div>
             <div class="form-group full">
               <label>配置文本 <span class="key-hint">JSON / env 片段</span></label>
-              <textarea id="importText" placeholder='"ANTHROPIC_AUTH_TOKEN": "sk-...",&#10;"ANTHROPIC_BASE_URL": "https://...",&#10;"ANTHROPIC_MODEL": "claude-..."'></textarea>
+              <textarea id="importText" placeholder="粘贴配置内容..."></textarea>
             </div>
             <div class="form-actions">
               <button class="btn btn-save" onclick="importProfile(false)">导入为配置</button>
@@ -337,11 +353,11 @@
   </div>
 </div>
 
-<!-- Right: live settings.json values -->
+<!-- Right: live settings values -->
 <aside class="live-panel">
   <div class="live-head">
     <div class="title"><span class="pulse"></span> 当前生效值</div>
-    <div class="sub">实时读取 settings.json</div>
+    <div class="sub" id="liveSub">实时读取配置</div>
   </div>
   <div class="live-active" id="liveActive"></div>
   <div class="live-body" id="currentCard"></div>
@@ -351,8 +367,13 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const ENV_KEYS = {{ env_keys | tojson }};
-const LABELS = {
+// ===================================================================
+// Provider-specific config
+// ===================================================================
+const CLAUDE_ENV_KEYS = {{ claude_env_keys | tojson }};
+const CODEX_ENV_KEYS = {{ codex_env_keys | tojson }};
+
+const CLAUDE_LABELS = {
   ANTHROPIC_AUTH_TOKEN: 'API Key',
   ANTHROPIC_BASE_URL: 'Base URL',
   ANTHROPIC_MODEL: '默认模型',
@@ -361,8 +382,30 @@ const LABELS = {
   ANTHROPIC_DEFAULT_HAIKU_MODEL: 'Haiku 模型',
   ANTHROPIC_REASONING_MODEL: '推理模型',
 };
-const NO_DROPDOWN = new Set(['ANTHROPIC_AUTH_TOKEN']);  // key 不提供下拉
+const CODEX_LABELS = {
+  OPENAI_API_KEY: 'API Key',
+  base_url: 'Base URL',
+  model: '默认模型',
+  model_provider: 'Provider 名称',
+  review_model: 'Review 模型',
+};
 
+const CLAUDE_NO_DROPDOWN = new Set(['ANTHROPIC_AUTH_TOKEN']);
+const CODEX_NO_DROPDOWN = new Set(['OPENAI_API_KEY']);
+
+const CLAUDE_IMPORT_PREFIX = 'ANTHROPIC_';
+
+let currentProvider = 'claude';
+
+function envKeys() { return currentProvider === 'codex' ? CODEX_ENV_KEYS : CLAUDE_ENV_KEYS; }
+function labels() { return currentProvider === 'codex' ? CODEX_LABELS : CLAUDE_LABELS; }
+function noDropdown() { return currentProvider === 'codex' ? CODEX_NO_DROPDOWN : CLAUDE_NO_DROPDOWN; }
+function apiPrefix() { return '/api/' + currentProvider; }
+function importPrefix() { return currentProvider === 'codex' ? 'CODEX_' : 'ANTHROPIC_'; }
+
+// ===================================================================
+// State
+// ===================================================================
 let profiles = [];
 let currentEnv = {};
 let appConfig = {};
@@ -388,9 +431,9 @@ function toast(msg, type = 'success') {
 function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
 
 function isActiveProfile(profile) {
-  return ENV_KEYS.every(k => (profile.env[k] || '') === (currentEnv[k] || ''));
+  return envKeys().every(k => (profile.env[k] || '') === (currentEnv[k] || ''));
 }
-function hasAnyEnv() { return ENV_KEYS.some(k => (currentEnv[k] || '').length > 0); }
+function hasAnyEnv() { return envKeys().some(k => (currentEnv[k] || '').length > 0); }
 function activeProfileName() {
   if (!hasAnyEnv()) return null;
   const p = profiles.find(isActiveProfile);
@@ -448,27 +491,30 @@ document.addEventListener('click', closeAllCombos);
 
 /* ---------- edit fields ---------- */
 function renderEditFields(env) {
-  document.getElementById('envFields').innerHTML = ENV_KEYS.map(k => {
-    const dropdown = !NO_DROPDOWN.has(k);
+  const keys = envKeys();
+  const lbls = labels();
+  const noDD = noDropdown();
+  document.getElementById('envFields').innerHTML = keys.map(k => {
+    const dropdown = !noDD.has(k);
     const input = dropdown
       ? `<div class="combo">
            <input type="text" id="f_${k}" autocomplete="off" placeholder="选择已有或输入新值">
            <button type="button" class="combo-btn" onclick="toggleCombo(event,'f_${k}','${k}')">▾</button>
            <div class="combo-menu" id="m_f_${k}"></div>
          </div>`
-      : `<input type="text" id="f_${k}" autocomplete="off" placeholder="sk-... (粘贴你的密钥)">`;
+      : `<input type="text" id="f_${k}" autocomplete="off" placeholder="粘贴你的密钥...">`;
     return `
       <div class="form-group${dropdown ? '' : ' full'}">
-        <label>${esc(LABELS[k] || k)} <span class="key-hint">${k}</span></label>
+        <label>${esc(lbls[k] || k)} <span class="key-hint">${k}</span></label>
         ${input}
       </div>`;
   }).join('');
-  ENV_KEYS.forEach(k => { document.getElementById('f_' + k).value = env[k] || ''; });
+  keys.forEach(k => { document.getElementById('f_' + k).value = env[k] || ''; });
 }
 
 function getFormEnv() {
   const env = {};
-  ENV_KEYS.forEach(k => { env[k] = document.getElementById('f_' + k).value.trim(); });
+  envKeys().forEach(k => { env[k] = document.getElementById('f_' + k).value.trim(); });
   return env;
 }
 
@@ -483,7 +529,7 @@ function renderCloneSuggestions() {
   box.innerHTML = profiles.slice(0, 6).map(p => `
     <div class="mini-card">
       <h4>${esc(p.name)}</h4>
-      <div class="sub">${esc(p.group || '默认')} · ${esc(p.env.ANTHROPIC_BASE_URL || '未设置URL')}</div>
+      <div class="sub">${esc(p.group || '默认')} · ${esc(p.env.base_url || p.env.ANTHROPIC_BASE_URL || '未设置URL')}</div>
       <button class="btn btn-sm btn-ghost" onclick="fillFromProfile('${p.id}')">填入此配置</button>
     </div>
   `).join('');
@@ -500,7 +546,7 @@ function renderProfiles() {
       return `
         <div class="profile-item ${editingId === p.id ? 'active' : ''} ${isActive ? 'live' : ''}" onclick="editProfile('${p.id}')">
           <div class="name">${esc(p.name)} ${isActive ? '<span class="live-pill">生效中</span>' : ''}</div>
-          <div class="meta">${esc(p.env.ANTHROPIC_BASE_URL || '未设置URL')}</div>
+          <div class="meta">${esc(p.env.base_url || p.env.ANTHROPIC_BASE_URL || '未设置URL')}</div>
           <div class="actions">
             <button class="btn btn-sm btn-apply" onclick="event.stopPropagation();applyProfile('${p.id}')">应用</button>
             <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();cloneProfile('${p.id}')">克隆</button>
@@ -518,6 +564,7 @@ function renderAllProfiles() {
     return;
   }
   const groups = groupProfiles();
+  const lbls = labels();
   grid.innerHTML = Object.entries(groups).map(([group, items]) => `
     <div class="category-card">
       <div class="category-card-header">
@@ -527,13 +574,14 @@ function renderAllProfiles() {
       <div class="category-grid">
         ${items.map(p => {
           const isActive = isActiveProfile(p) && hasAnyEnv();
+          const modelKey = currentProvider === 'codex' ? 'model' : 'ANTHROPIC_MODEL';
+          const urlKey = currentProvider === 'codex' ? 'base_url' : 'ANTHROPIC_BASE_URL';
           return `
             <div class="mini-card ${isActive ? 'active' : ''}">
               <h4>${esc(p.name)} ${isActive ? '<span class="live-pill">生效中</span>' : ''}</h4>
-              <div class="sub">${esc(p.env.ANTHROPIC_BASE_URL || '未设置URL')}</div>
+              <div class="sub">${esc(p.env[urlKey] || '未设置URL')}</div>
               <div class="kv-list">
-                <div class="kv-row"><span class="kv-key">MODEL</span><span class="kv-val ${p.env.ANTHROPIC_MODEL ? '' : 'unset'}" title="${escAttr(p.env.ANTHROPIC_MODEL || '')}">${esc(p.env.ANTHROPIC_MODEL || '未设置')}</span></div>
-                <div class="kv-row"><span class="kv-key">SONNET</span><span class="kv-val ${p.env.ANTHROPIC_DEFAULT_SONNET_MODEL ? '' : 'unset'}" title="${escAttr(p.env.ANTHROPIC_DEFAULT_SONNET_MODEL || '')}">${esc(p.env.ANTHROPIC_DEFAULT_SONNET_MODEL || '未设置')}</span></div>
+                <div class="kv-row"><span class="kv-key">MODEL</span><span class="kv-val ${p.env[modelKey] ? '' : 'unset'}" title="${escAttr(p.env[modelKey] || '')}">${esc(p.env[modelKey] || '未设置')}</span></div>
               </div>
               <div class="profile-card-actions">
                 <button class="btn btn-sm btn-apply" onclick="applyProfile('${p.id}')">应用</button>
@@ -568,37 +616,67 @@ function renderCurrent() {
   const banner = document.getElementById('liveActive');
   if (!hasAnyEnv()) {
     banner.className = 'live-active none';
-    banner.innerHTML = `<div class="l">Active Profile</div><div class="v">settings.json 暂无 env 配置</div>`;
+    banner.innerHTML = `<div class="l">Active Profile</div><div class="v">暂无 env 配置</div>`;
   } else {
     banner.className = 'live-active';
     banner.innerHTML = `<div class="l">Active Profile</div><div class="v">${name ? esc(name) : '自定义 / 未匹配任何配置'}</div>`;
   }
+
+  const isCodex = currentProvider === 'codex';
+  const lbls = labels();
+  const homeDirLabel = isCodex ? 'CODEX_HOME_DIR' : 'CLAUDE_HOME_DIR';
+  const homeDirValue = isCodex ? appConfig.codex_home_dir : appConfig.claude_home_dir;
+
   document.getElementById('currentCard').innerHTML = `
     <div class="live-group">
       <div class="gtitle">路径</div>
-      ${liveRow('HOME_DIR', appConfig.home_dir, { path: true })}
-      ${liveRow('SETTINGS_PATH', appConfig.settings_path, { path: true })}
+      ${liveRow(homeDirLabel, homeDirValue, { path: true })}
+      ${liveRow(isCodex ? 'AUTH_PATH' : 'SETTINGS_PATH', isCodex ? appConfig.codex_auth_path : appConfig.claude_settings_path, { path: true })}
+      ${liveRow(isCodex ? 'CONFIG_TOML_PATH' : 'PROFILES_PATH', isCodex ? appConfig.codex_config_toml_path : appConfig.claude_profiles_path, { path: true })}
     </div>
     <div class="live-group">
-      <div class="gtitle">环境变量 (env)</div>
-      ${ENV_KEYS.map(k => liveRow(k, currentEnv[k], { maskable: k === 'ANTHROPIC_AUTH_TOKEN' })).join('')}
+      <div class="gtitle">配置值</div>
+      ${envKeys().map(k => liveRow(k, currentEnv[k], { maskable: (k === 'ANTHROPIC_AUTH_TOKEN' || k === 'OPENAI_API_KEY') })).join('')}
     </div>`;
 }
 
 /* ---------- data ---------- */
 async function reloadData() {
+  const prefix = apiPrefix();
   [appConfig, currentEnv, profiles] = await Promise.all([
-    api('/api/config'), api('/api/current'), api('/api/profiles'),
+    api('/api/config'),
+    api(prefix + '/current'),
+    api(prefix + '/profiles'),
   ]);
-  document.getElementById('homeDir').value = appConfig.home_dir || '';
+  document.getElementById('homeDir').value = currentProvider === 'codex'
+    ? (appConfig.codex_home_dir || '') : (appConfig.claude_home_dir || '');
+  document.getElementById('homeDirLabel').textContent = currentProvider === 'codex'
+    ? 'CODEX_HOME_DIR' : 'CLAUDE_HOME_DIR';
+  document.getElementById('liveSub').textContent = currentProvider === 'codex'
+    ? '实时读取 auth.json + config.toml' : '实时读取 settings.json';
   renderCurrent(); renderProfiles(); renderAllProfiles();
 }
 
 async function saveHomeDir() {
   const homeDir = document.getElementById('homeDir').value.trim();
-  const res = await api('/api/config', { method: 'POST', body: { home_dir: homeDir } });
+  const res = await api('/api/config', {
+    method: 'POST',
+    body: { home_dir: homeDir, provider: currentProvider },
+  });
   if (res.error) { toast(res.error, 'error'); return; }
   await reloadData(); showCurrent(); toast('已切换主目录');
+}
+
+/* ---------- provider switching ---------- */
+async function switchProvider(prov) {
+  if (currentProvider === prov) return;
+  currentProvider = prov;
+  document.getElementById('tabClaude').classList.toggle('active', prov === 'claude');
+  document.getElementById('tabCodex').classList.toggle('active', prov === 'codex');
+  tokenRevealed = false;
+  editingId = null;
+  await reloadData();
+  showCurrent();
 }
 
 /* ---------- views ---------- */
@@ -655,7 +733,6 @@ function cloneProfile(id) {
   const p = profiles.find(x => x.id === id);
   if (p) showEditForm({ ...p, id: null, name: `${p.name} 副本`, created_at: undefined });
 }
-// 在编辑表单内用某个配置的值填充字段（不改变正在编辑的目标）
 function fillFromProfile(id) {
   const p = profiles.find(x => x.id === id);
   if (!p) return;
@@ -669,54 +746,61 @@ function fillFromProfile(id) {
 function parseConfigText(text) {
   const trimmed = text.trim();
   if (!trimmed) throw new Error('请先粘贴配置内容');
+  const prefix = importPrefix();
+  const keys = envKeys();
+
   const candidates = [trimmed, `{${trimmed.replace(/,\s*$/, '')}}`];
   for (const candidate of candidates) {
     try {
       const parsed = JSON.parse(candidate);
       const source = parsed.env && typeof parsed.env === 'object' ? parsed.env : parsed;
       const env = {};
-      ENV_KEYS.forEach(k => { if (typeof source[k] === 'string') env[k] = source[k]; });
+      keys.forEach(k => { if (typeof source[k] === 'string') env[k] = source[k]; });
       if (Object.keys(env).length > 0) return { ...emptyEnv(), ...env };
     } catch (_) {}
   }
+  // Regex match
   const env = {};
-  const re = /["']?(ANTHROPIC_[A-Z_]+)["']?\s*[:=]\s*["']([^"']*)["']/g;
+  const keyPattern = keys.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const re = new RegExp(`["']?(${keyPattern})["']?\\s*[:=]\\s*["']([^"']*)["']`, 'g');
   let match;
   while ((match = re.exec(trimmed)) !== null) {
-    if (ENV_KEYS.includes(match[1])) env[match[1]] = match[2];
+    if (keys.includes(match[1])) env[match[1]] = match[2];
   }
-  if (Object.keys(env).length === 0) throw new Error('没有识别到 ANTHROPIC_* 配置');
+  if (Object.keys(env).length === 0) throw new Error('没有识别到 ' + prefix + '* 配置');
   return { ...emptyEnv(), ...env };
 }
 
-function emptyEnv() { return Object.fromEntries(ENV_KEYS.map(k => [k, ''])); }
+function emptyEnv() { return Object.fromEntries(envKeys().map(k => [k, ''])); }
 
 async function importProfile(applyAfterSave) {
   let env;
   try { env = parseConfigText(document.getElementById('importText').value); }
   catch (e) { toast(e.message, 'error'); return; }
-  const name = document.getElementById('importName').value.trim() || env.ANTHROPIC_BASE_URL || env.ANTHROPIC_MODEL || '导入配置';
+  const name = document.getElementById('importName').value.trim()
+    || env.base_url || env.ANTHROPIC_BASE_URL || env.model || env.ANTHROPIC_MODEL || '导入配置';
   const group = document.getElementById('importGroup').value.trim() || '默认';
-  await api('/api/profiles', { method: 'POST', body: { name, group, env } });
+  const prefix = apiPrefix();
+  await api(prefix + '/profiles', { method: 'POST', body: { name, group, env } });
   if (applyAfterSave) {
-    await api('/api/apply', { method: 'POST', body: env });
-    currentEnv = await api('/api/current');
+    await api(prefix + '/apply', { method: 'POST', body: env });
+    currentEnv = await api(prefix + '/current');
     toast('已导入并应用: ' + name);
   } else { toast('已导入配置: ' + name); }
-  profiles = await api('/api/profiles');
+  profiles = await api(prefix + '/profiles');
   renderCurrent(); showCurrent();
 }
 
 /* ---------- export / import file ---------- */
 async function exportConfig() {
   try {
-    const res = await fetch('/api/export');
+    const res = await fetch(apiPrefix() + '/export');
     if (!res.ok) { const j = await res.json().catch(() => ({})); toast(j.error || '导出失败', 'error'); return; }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'claude_code_config_export.json';
+    a.download = currentProvider === 'codex' ? 'codex_config_export.json' : 'claude_code_config_export.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -732,16 +816,16 @@ async function importFileConfig() {
   const formData = new FormData();
   formData.append('file', file);
   try {
-    const res = await fetch('/api/import?mode=' + mode, { method: 'POST', body: formData });
+    const res = await fetch(apiPrefix() + '/import?mode=' + mode, { method: 'POST', body: formData });
     const data = await res.json();
     if (data.error) { toast(data.error, 'error'); return; }
     if (data.profiles_count === 0 && mode === 'merge') {
       toast('文件中没有新的配置需要导入（全部已存在）');
     } else {
-      toast('已导入 ' + data.profiles_count + ' 个配置' + (data.settings_updated ? '，并更新了生效环境变量' : ''));
+      toast('已导入 ' + data.profiles_count + ' 个配置' + (data.settings_updated ? '，并更新了生效配置' : ''));
     }
-    profiles = await api('/api/profiles');
-    currentEnv = await api('/api/current');
+    profiles = await api(apiPrefix() + '/profiles');
+    currentEnv = await api(apiPrefix() + '/current');
     renderCurrent(); showCurrent();
   } catch (e) { toast('导入失败: ' + e.message, 'error'); }
 }
@@ -751,9 +835,15 @@ async function saveProfile() {
   const name = document.getElementById('profileName').value.trim() || '未命名';
   const group = document.getElementById('profileGroup').value.trim() || '默认';
   const env = getFormEnv();
-  if (editingId) { await api(`/api/profiles/${editingId}`, { method: 'PUT', body: { name, group, env } }); toast('配置已更新'); }
-  else { await api('/api/profiles', { method: 'POST', body: { name, group, env } }); toast('配置已保存'); }
-  profiles = await api('/api/profiles');
+  const prefix = apiPrefix();
+  if (editingId) {
+    await api(prefix + '/profiles/' + editingId, { method: 'PUT', body: { name, group, env } });
+    toast('配置已更新');
+  } else {
+    await api(prefix + '/profiles', { method: 'POST', body: { name, group, env } });
+    toast('配置已保存');
+  }
+  profiles = await api(prefix + '/profiles');
   showCurrent();
 }
 
@@ -761,19 +851,21 @@ async function applyEditing() {
   const name = document.getElementById('profileName').value.trim() || '未命名';
   const group = document.getElementById('profileGroup').value.trim() || '默认';
   const env = getFormEnv();
-  if (editingId) await api(`/api/profiles/${editingId}`, { method: 'PUT', body: { name, group, env } });
-  else await api('/api/profiles', { method: 'POST', body: { name, group, env } });
-  await api('/api/apply', { method: 'POST', body: env });
-  profiles = await api('/api/profiles');
-  currentEnv = await api('/api/current');
+  const prefix = apiPrefix();
+  if (editingId) await api(prefix + '/profiles/' + editingId, { method: 'PUT', body: { name, group, env } });
+  else await api(prefix + '/profiles', { method: 'POST', body: { name, group, env } });
+  await api(prefix + '/apply', { method: 'POST', body: env });
+  profiles = await api(prefix + '/profiles');
+  currentEnv = await api(prefix + '/current');
   renderCurrent(); showCurrent();
   toast('已保存并应用: ' + name);
 }
 
 async function applyProfile(id) {
-  const res = await api(`/api/apply/${id}`, { method: 'POST' });
+  const prefix = apiPrefix();
+  const res = await api(prefix + '/apply/' + id, { method: 'POST' });
   if (res.ok) {
-    currentEnv = await api('/api/current');
+    currentEnv = await api(prefix + '/current');
     renderCurrent(); renderProfiles(); renderAllProfiles();
     toast('已切换到: ' + res.applied);
   }
@@ -782,8 +874,8 @@ async function applyProfile(id) {
 async function deleteProfile(id) {
   const p = profiles.find(x => x.id === id);
   if (!confirm(`确认删除配置 "${p?.name}" ?`)) return;
-  await api(`/api/profiles/${id}`, { method: 'DELETE' });
-  profiles = await api('/api/profiles');
+  await api(apiPrefix() + '/profiles/' + id, { method: 'DELETE' });
+  profiles = await api(apiPrefix() + '/profiles');
   if (editingId === id) showCurrent();
   else { renderProfiles(); renderAllProfiles(); }
   toast('已删除');
